@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/mmcdole/gofeed/extensions"
-	"github.com/mmcdole/gofeed/internal/shared"
+	"github.com/Wondershake/gofeed/extensions"
+	"github.com/Wondershake/gofeed/internal/shared"
 	"github.com/mmcdole/goxpp"
 )
 
@@ -140,13 +140,7 @@ func (rp *Parser) parseChannel(p *xpp.XMLPullParser) (rss *Feed, err error) {
 
 			name := strings.ToLower(p.Name)
 
-			if shared.IsExtension(p) {
-				ext, err := shared.ParseExtension(extensions, p)
-				if err != nil {
-					return nil, err
-				}
-				extensions = ext
-			} else if name == "title" {
+			if name == "title" {
 				result, err := shared.ParseText(p)
 				if err != nil {
 					return nil, err
@@ -277,9 +271,11 @@ func (rp *Parser) parseChannel(p *xpp.XMLPullParser) (rss *Feed, err error) {
 				}
 				rss.TextInput = result
 			} else {
-				// Skip element as it isn't an extension and not
-				// part of the spec
-				p.Skip()
+				ext, err := shared.ParseExtension(extensions, p)
+				if err != nil {
+					return nil, err
+				}
+				extensions = ext
 			}
 		}
 	}
@@ -331,13 +327,7 @@ func (rp *Parser) parseItem(p *xpp.XMLPullParser) (item *Item, err error) {
 
 			name := strings.ToLower(p.Name)
 
-			if shared.IsExtension(p) {
-				ext, err := shared.ParseExtension(extensions, p)
-				if err != nil {
-					return nil, err
-				}
-				item.Extensions = ext
-			} else if name == "title" {
+			if name == "title" {
 				result, err := shared.ParseText(p)
 				if err != nil {
 					return nil, err
@@ -412,8 +402,11 @@ func (rp *Parser) parseItem(p *xpp.XMLPullParser) (item *Item, err error) {
 				}
 				categories = append(categories, result)
 			} else {
-				// Skip any elements not part of the item spec
-				p.Skip()
+				ext, err := shared.ParseExtension(extensions, p)
+				if err != nil {
+					return nil, err
+				}
+				item.Extensions = ext
 			}
 		}
 	}

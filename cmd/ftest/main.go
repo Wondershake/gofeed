@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Wondershake/gofeed"
+	"github.com/Wondershake/gofeed/atom"
+	"github.com/Wondershake/gofeed/rss"
 	"github.com/codegangsta/cli"
-	"github.com/mmcdole/gofeed"
-	"github.com/mmcdole/gofeed/atom"
-	"github.com/mmcdole/gofeed/rss"
 )
 
 func main() {
