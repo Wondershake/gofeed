@@ -29,6 +29,7 @@ func (rp *Parser) parseRoot(p *xpp.XMLPullParser) (*Feed, error) {
 	rssErr := p.Expect(xpp.StartTag, "rss")
 	rdfErr := p.Expect(xpp.StartTag, "rdf")
 	if rssErr != nil && rdfErr != nil {
+
 		return nil, fmt.Errorf("%s or %s", rssErr.Error(), rdfErr.Error())
 	}
 
@@ -341,7 +342,7 @@ func (rp *Parser) parseItem(p *xpp.XMLPullParser) (item *Item, err error) {
 				item.Description = result
 			} else if name == "encoded" {
 				space := strings.TrimSpace(p.Space)
-				if prefix, ok := p.Spaces[space]; ok && prefix == "content" {
+				if prefix, ok := p.Spaces[space]; space == "content" || (ok && prefix == "content") {
 					result, err := shared.ParseText(p)
 					if err != nil {
 						return nil, err
