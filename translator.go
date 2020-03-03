@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Wondershake/gofeed/atom"
-	"github.com/Wondershake/gofeed/extensions"
+	ext "github.com/Wondershake/gofeed/extensions"
 	"github.com/Wondershake/gofeed/internal/shared"
 	"github.com/Wondershake/gofeed/rss"
 )

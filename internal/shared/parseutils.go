@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mmcdole/goxpp"
+	xpp "github.com/mmcdole/goxpp"
 )
 
 var (
@@ -21,48 +21,8 @@ var (
 	InvalidNumericReference = errors.New("invalid numeric reference")
 )
 
-// FindRoot iterates through the tokens of an xml document until
-// it encounters its first StartTag event.  It returns an error
-// if it reaches EndDocument before finding a tag.
-func FindRoot(p *xpp.XMLPullParser) (event xpp.XMLEventType, err error) {
-	for {
-		event, err = p.Next()
-		if err != nil {
-			return event, err
-		}
-		if event == xpp.StartTag {
-			break
-		}
-
-		if event == xpp.EndDocument {
-			return event, fmt.Errorf("Failed to find root node before document end.")
-		}
-	}
-	return
-}
-
-// NextTag iterates through the tokens until it reaches a StartTag or EndTag
-// It is similar to goxpp's NextTag method except it wont throw an error if
-// the next immediate token isnt a Start/EndTag.  Instead, it will continue to
-// consume tokens until it hits a Start/EndTag or EndDocument.
-func NextTag(p *xpp.XMLPullParser) (event xpp.XMLEventType, err error) {
-	for {
-		event, err = p.Next()
-		if err != nil {
-			return event, err
-		}
-
-		if event == xpp.StartTag || event == xpp.EndTag {
-			break
-		}
-
-		if event == xpp.EndDocument {
-			return event, fmt.Errorf("Failed to find NextTag before reaching the end of the document.")
-		}
-
-	}
-	return
-}
+const CDATA_START = "<![CDATA["
+const CDATA_END = "]]>"
 
 // ParseText is a helper function for parsing the text
 // from the current element of the XMLPullParser.
@@ -82,14 +42,44 @@ func ParseText(p *xpp.XMLPullParser) (string, error) {
 	result := text.InnerXML
 	result = strings.TrimSpace(result)
 
-	if strings.HasPrefix(result, "<![CDATA[") &&
-		strings.HasSuffix(result, "]]>") {
-		result = strings.TrimPrefix(result, "<![CDATA[")
-		result = strings.TrimSuffix(result, "]]>")
-		return result, nil
+	if strings.Contains(result, CDATA_START) {
+		return StripCDATA(result), nil
 	}
 
 	return DecodeEntities(result)
+}
+
+// StripCDATA removes CDATA tags from the string
+// content outside of CDATA tags is passed via DecodeEntities
+func StripCDATA(str string) string {
+	buf := bytes.NewBuffer([]byte{})
+
+	curr := 0
+
+	for curr < len(str) {
+
+		start := indexAt(str, CDATA_START, curr)
+
+		if start == -1 {
+			dec, _ := DecodeEntities(str[curr:])
+			buf.Write([]byte(dec))
+			return buf.String()
+		}
+
+		end := indexAt(str, CDATA_END, start)
+
+		if end == -1 {
+			dec, _ := DecodeEntities(str[curr:])
+			buf.Write([]byte(dec))
+			return buf.String()
+		}
+
+		buf.Write([]byte(str[start+len(CDATA_START) : end]))
+
+		curr = curr + end + len(CDATA_END)
+	}
+
+	return buf.String()
 }
 
 // DecodeEntities decodes escaped XML entities
@@ -193,4 +183,12 @@ func ParseNameAddress(nameAddressText string) (name string, address string) {
 		address = result[1]
 	}
 	return
+}
+
+func indexAt(str, substr string, start int) int {
+	idx := strings.Index(str[start:], substr)
+	if idx > -1 {
+		idx += start
+	}
+	return idx
 }
